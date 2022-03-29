@@ -1,9 +1,10 @@
 from io import BytesIO
 from typing import List
+import librosa
 
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from model import load_model, predict, prepare_image
+from model import load_model, predict, prepare_audio
 from PIL import Image
 from pydantic import BaseModel
 
@@ -24,16 +25,16 @@ class Prediction(BaseModel):
 async def prediction(file: UploadFile = File(...)):
 
     # Ensure that the file is an image
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File provided is not an image.")
+    if not file.content_type.startswith("audio/"):
+        raise HTTPException(status_code=400, detail="File provided is not an audio.")
 
     content = await file.read()
-    image = Image.open(BytesIO(content)).convert("RGB")
+    audio, sample_rate = librosa.load(BytesIO(content), sr=None)
 
     # preprocess the image and prepare it for classification
-    image = prepare_image(image, target=(224, 224))
+    X = prepare_audio(audio, sample_rate, target=100)
 
-    response = predict(image, model)
+    response = predict(X, model)
 
     # return the response as a JSON
     return {
@@ -42,7 +43,6 @@ async def prediction(file: UploadFile = File(...)):
         "predictions": response,
     }
 
-
 if __name__ == "__main__":
 
-    uvicorn.run("main:app", host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="127.0.0.1", port=5000, log_level="info")

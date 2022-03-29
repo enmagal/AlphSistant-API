@@ -1,35 +1,38 @@
 import numpy as np
 from PIL import Image
-from tensorflow.keras.applications import ResNet50, imagenet_utils
-from tensorflow.keras.applications.imagenet_utils import (decode_predictions,
-                                                          preprocess_input)
-from tensorflow.keras.preprocessing.image import img_to_array
+import librosa
+
+import torch
 
 
 def load_model():
     """
     Loads and returns the pretrained model
     """
-    model = ResNet50(weights="imagenet")
+    model = torch.load('C:/Users/Enzo.Magal/Documents/Enzo2021/models/sk_model.pth')
     print("Model loaded")
     return model
 
 
-def prepare_image(image, target):
+def prepare_audio(audio, sample_rate, target):
+    sample = []
+    for i in range(target):
+        sample.append(audio[int(i*(len(audio)/target)):int((i+1)*(len(audio)/target))])
+    mel_spec = []
+    for i in range(target):
+        spectrogram = librosa.stft(sample[i], n_fft = 1024, hop_length = 41, win_length=82)
+        sgram_mag, _ = librosa.magphase(spectrogram)
+        mel_scale_sgram = librosa.feature.melspectrogram(S=sgram_mag, sr= sample_rate)
+        mel_spec.append(librosa.amplitude_to_db(mel_scale_sgram, ref=np.min))
 
-    # resize the input image and preprocess it
-    image = image.resize(target)
-    image = img_to_array(image)
-    image = np.expand_dims(image, axis=0)
-    image = preprocess_input(image)
-
-    return image
+    return mel_spec
 
 
-def predict(image, model):
-    # We keep the 2 classes with the highest confidence score
-    results = decode_predictions(model.predict(image), 2)[0]
+def predict(input, model):
+
+    sk_list = ["Basis", "jaw_open", "left_eye_closed", "mouth_open", "right_eye_closed", "smile", "smile_left", "smile_right"]
+    
     response = [
-        {"class": result[1], "score": float(round(result[2], 3))} for result in results
+        {"shape key": sk, "weight": 1} for sk in sk_list
     ]
     return response
