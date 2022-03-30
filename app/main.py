@@ -4,7 +4,7 @@ import librosa
 
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from model import load_model, predict, prepare_audio
+from .model import load_model, predict, prepare_audio
 from PIL import Image
 from pydantic import BaseModel
 

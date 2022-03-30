@@ -30,9 +30,31 @@ def prepare_audio(audio, sample_rate, target):
 
 def predict(input, model):
 
+    nbrFrame = len(input)
+
+    # Liste des shape keys
     sk_list = ["Basis", "jaw_open", "left_eye_closed", "mouth_open", "right_eye_closed", "smile", "smile_left", "smile_right"]
+
+    # Création d'un faux output pour tester le code avant d'avoir le modèle
+    output = []
+    for i in range(nbrFrame):
+        output.append([1, 1, 1, 1, 1, 1, 1, 1])
     
+    basis = np.loadtxt('../../AlphData/shape_keys_v0/Basis.txt')
+    jaw_open = np.loadtxt('../../AlphData/shape_keys_v0/jaw_open.txt')
+    left_eye_closed = np.loadtxt('../../AlphData/shape_keys_v0/left_eye_closed.txt')
+    mouth_open = np.loadtxt('../../AlphData/shape_keys_v0/mouth_open.txt')
+    right_eye_closed = np.loadtxt('../../AlphData/shape_keys_v0/right_eye_closed.txt')
+    smile_left = np.loadtxt('../../AlphData/shape_keys_v0/smile_left.txt')
+    smile_right = np.loadtxt('../../AlphData/shape_keys_v0/smile_right.txt')
+    smile = np.loadtxt('../../AlphData/shape_keys_v0/smile.txt')
+
     response = [
-        {"shape key": sk, "weight": 1} for sk in sk_list
+        {
+            "frame": k,
+            "sk_weights": {"shape_key": sk_list[i], "weight": output[i]} for i in range(8)
+            "mesh": output[i][0] * basis + output[i][1] * jaw_open + output[i][2] * left_eye_closed + output[i][3] * mouth_open + output[i][4] * right_eye_closed+ output[i][5] * smile + output[i][6] * smile_left + output[i][7] * smile_right
+        } for k in range(nbrFrame)
+        
     ]
     return response
